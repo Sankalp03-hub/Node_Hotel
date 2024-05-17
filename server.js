@@ -20,16 +20,16 @@ const MenuItem = require("./models/MenuItem");
 
 const localAuthMiddleware = passport.authenticate("local", { session: false });
 
-app.get("/", localAuthMiddleware, function (req, res) {
+app.get("/", function (req, res) {
   res.send("Welcome to my hotel");
 });
 
 //Import the router files
 const personRoutes = require("./routes/personRoutes");
-app.use("/person", localAuthMiddleware, personRoutes);
+app.use("/person", personRoutes);
 
 const menuRoutes = require("./routes/menuRoutes");
-app.use("/menuItem", localAuthMiddleware, menuRoutes);
+app.use("/menuItem" , menuRoutes);
 
 const PORT = process.env.PORT || 3000;
 
