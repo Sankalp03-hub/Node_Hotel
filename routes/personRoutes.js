@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Person = require("./../models/Person");
-const{jwtAuthMiddleware, generateToken}=require('./../jwt');
+const { jwtAuthMiddleware, generateToken } = require("./../jwt");
 
-//post route to add person
-router.get("/", async (req, res) => {
+//post route to get person
+router.get("/",jwtAuthMiddleware, async (req, res) => {
   try {
     const data = await Person.find();
     console.log("data fetched");
@@ -14,6 +14,52 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Internal server Error" });
   }
 });
+
+//login route
+router.post("/login", async (req, res) => {
+  try {
+    //extract username and password from body
+    const { username, password } = req.body;
+
+    //find user by username
+    const user = await Person.findOne({ username: username });
+
+    //if user doesnot exist or password does not match,return error
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ error: "Invalid username and password" });
+    }
+
+    //generate token
+    const payload = {
+      id: user.id,
+      username: user.username,
+    };
+    const token = generateToken(payload);
+
+    // return token as response
+    res.json({ token });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server Error" });
+  }
+});
+
+router.get('/profile',jwtAuthMiddleware,async(req,res)=>{
+  try{
+    const userData=req.user;
+    console.log("user Data :", userData);
+
+    const userId=userData.id;
+    const user=await Person.findById(userId);
+
+    res.status(200).json({user});
+  }
+  catch(err){
+    console.log(err);
+    res.status(500).json({ error: "Internal server Error" });
+
+  }
+})
 
 router.post("/signup", async (req, res) => {
   try {
@@ -26,16 +72,16 @@ router.post("/signup", async (req, res) => {
     const response = await newPerson.save();
     console.log("data saved");
 
-    const payload={
-      id:response.id,
-      username:response.username
-    }
+    const payload = {
+      id: response.id,
+      username: response.username,
+    };
 
     console.log(JSON.stringify(payload));
     const token = generateToken(payload);
-    console.log("Token is:", token)
+    console.log("Token is:", token);
 
-    res.status(200).json({response:response, token:token});
+    res.status(200).json({ response: response, token: token });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Internal server Error" });
